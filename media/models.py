@@ -68,7 +68,7 @@ class ImageBase(ImageFieldMixin, ReplaceOldImageMixin):
         
     """
     
-    objects = ImageManager()
+    #objects = ImageManager()
 
     # core fields
     name = models.CharField()
