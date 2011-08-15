@@ -73,7 +73,7 @@ class ImageBase(ImageFieldMixin):
     #objects = ImageManager()
 
     # core fields
-    name = models.CharField()
+    name = models.CharField(max_length=255)
     caption = models.TextField(null=True, blank=True)
 
     # relations
