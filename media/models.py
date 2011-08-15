@@ -12,6 +12,8 @@
 import os
 
 from django.contrib.auth.models import User
+from django.contrib.contenttypes.models import ContentType
+from django.contrib.contenttypes import generic
 from django.core.files.storage import default_storage
 from django.db import models
 from django.db.models import Max
