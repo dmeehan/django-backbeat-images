@@ -64,7 +64,7 @@ class ReplaceOldImageMixin(models.Model):
         abstract = True
 
 
-class ImageBase(ImageFieldMixin, ReplaceOldImageMixin):
+class ImageBase(ImageFieldMixin):
     """
         Abstract Image model.
         
@@ -91,12 +91,7 @@ class RelatedImageMixin(models.Model):
         An abstract image to be associated with another content object
 
     """
-    # metadata
-    is_main = models.BooleanField('Main image', default=False)
-    order = models.IntegerField(default=0)
-
-    class Meta:
-        abstract=True
+    pass
 
 
 class GenericImageMixin(models.Model):
@@ -104,19 +99,23 @@ class GenericImageMixin(models.Model):
         Allow image to be associated with any other content object
 
     """
+   pass
+
+
+
+class GenericRelatedImageBase(ImageBase):
+    """
+        An image that can be attached to any other content object
+
+    """
+
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
     content_object = generic.GenericForeignKey()
 
-    class Meta:
-        abstract=True
-
-
-
-class GenericRelatedImageBase(ImageBase, RelatedImageMixin, GenericImageMixin):
-    """
-        An image that can be attached to any other content object
-    """
+    # metadata
+    is_main = models.BooleanField('Main image', default=False)
+    order = models.IntegerField(default=0)
 
     def get_upload_path(self, filename):
         """ Override this in proxy subclass to customize upload path..
