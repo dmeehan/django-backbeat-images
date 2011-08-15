@@ -99,7 +99,7 @@ class GenericImageMixin(models.Model):
         Allow image to be associated with any other content object
 
     """
-   pass
+    pass
 
 
 
