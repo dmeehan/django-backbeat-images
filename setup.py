@@ -14,7 +14,7 @@ except (IOError, OSError):
 
 setup(
     name='django-backbeat-media',
-    version=projects.get_version(),
+    version=media.get_version(),
     description='A pluggable media management app.',
     long_description=long_description,
     author='Douglas Meehan',
