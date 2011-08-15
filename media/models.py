@@ -106,7 +106,7 @@ class GenericImageMixin(models.Model):
     """
     content_type = models.ForeignKey(ContentType)
     object_id = models.PositiveIntegerField()
-    content_object = GenericForeignKey()
+    content_object = generic.GenericForeignKey()
 
     class Meta:
         abstract=True
