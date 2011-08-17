@@ -86,20 +86,35 @@ class ImageBase(ImageFieldMixin):
         return u'%s' % self.name
 
 
-class RelatedImageMixin(models.Model):
+class RelatedImageBase(ImageBase):
     """
         An abstract image to be associated with another content object
 
     """
-    pass
+    # metadata
+    is_main = models.BooleanField('Main image', default=False)
+    order = models.IntegerField(default=0)
 
+    def _get_next_pk(self):
+        max_pk = self.__class__.objects.aggregate(m=Max('pk'))['m'] or 0
+        return max_pk+1
 
-class GenericImageMixin(models.Model):
-    """
-        Allow image to be associated with any other content object
+    def save(self, *args, **kwargs):
+        if self.is_main:
+            related_images = self.__class__.objects.filter(
+                                                content_type=self.content_type,
+                                                object_id=self.object_id
+                                            )
+            related_images.update(is_main=False)
 
-    """
-    pass
+        if not self.pk: # object is created
+            if not self.order: # order is not set
+                self.order = self._get_next_pk() # let it be max(pk)+1
+
+        super(RelatedImageBase, self).save(*args, **kwargs)
+
+    class Meta:
+        abstract=True
 
 
 
