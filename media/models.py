@@ -1,23 +1,21 @@
-#coding: utf-8
+# coding: utf-8
 # media/models.py
 """
 
     A pluggable media management app for django.
+    Requires django-imagekit and PIL.
 
     Borrows from django-generic-images:
     https://bitbucket.org/kmike/django-generic-images/
     by https://bitbucket.org/kmike/
 
 """
-import os
+from django.conf import settings
+from django.db import models, transaction
 
-from django.contrib.auth.models import User
-from django.contrib.contenttypes.models import ContentType
-from django.contrib.contenttypes import generic
-from django.core.files.storage import default_storage
-from django.db import models
-from django.db.models import Max
+from imagekit import ImageModel
 
+from media.fields import PositionField
 
 class ImageFieldMixin(models.Model):
     """
@@ -37,6 +35,22 @@ class ImageFieldMixin(models.Model):
     class Meta:
         abstract = True
 
+class ImageFieldAutoMixin(ImageModel, ImageFieldMixin):
+    """
+        Simple abstract Model class with image field that includes
+        resize specs.
+
+    """
+    class Meta:
+        abstract = True
+
+    class IKOptions:
+        spec_module = settings.MEDIA_SPEC_MODULE
+        cache_dir = settings.MEDIA_CACHE_DIR
+        cache_filename_format = settings.MEDIA_CACHE_FILENAME_FORMAT
+        preprocessor_spec = settings.MEDIA_CACHE_FILENAME_FORMAT
+        storage = settings.MEDIA_STORAGE
+
 class ReplaceOldImageMixin(models.Model):
     """
         If the file for image is re-uploaded, old file is deleted.
@@ -44,9 +58,6 @@ class ReplaceOldImageMixin(models.Model):
     """
 
     def _replace_old_image(self):
-        """ Override this in subclass if you don't want
-            image replacing or want to customize image replacing
-        """
         try:
             old_obj = self.__class__.objects.get(pk=self.pk)
             if old_obj.image.path != self.image.path:
@@ -64,20 +75,19 @@ class ReplaceOldImageMixin(models.Model):
         abstract = True
 
 
-class ImageBase(ImageFieldMixin):
+class ImageBase(models.Model):
     """
-        Abstract Image model.
-        
+        Abstract Image model fields.
+
     """
-    
-    #objects = ImageManager()
 
     # core fields
     name = models.CharField(max_length=255)
     caption = models.TextField(null=True, blank=True)
+    public = models.BooleanField(default=True, help_text="This file is publicly available.")
 
-    # relations
-    user = models.ForeignKey(User, blank=True, null=True)
+    slug = models.SlugField(unique=True,
+                            help_text="Suggested value automatically generated from name. Must be unique.")
 
     class Meta:
         abstract=True
@@ -86,110 +96,112 @@ class ImageBase(ImageFieldMixin):
         return u'%s' % self.name
 
 
-class RelatedImageBase(ImageBase):
+class ImageAutoBase(ImageModel, ImageFieldAutoMixin, ImageBase):
     """
-        An abstract image to be associated with another content object
+        Abstract Image model that will be automatically
+        resized based on the project image specs.
 
     """
-    # metadata
-    is_main = models.BooleanField('Main image', default=False)
-    order = models.IntegerField(default=0)
+    CROPHORZ_LEFT = 0
+    CROPHORZ_CENTER = 1
+    CROPHORZ_RIGHT = 2
+    CROPHORZ_CHOICES = (
+        (CROPHORZ_LEFT, 'left'),
+        (CROPHORZ_CENTER, 'center'),
+        (CROPHORZ_RIGHT, 'right'),
+    )
 
-    def _get_next_pk(self):
-        max_pk = self.__class__.objects.aggregate(m=Max('pk'))['m'] or 0
-        return max_pk+1
+    CROPVERT_TOP = 0
+    CROPVERT_CENTER = 1
+    CROPVERT_BOTTOM = 2
+    CROPVERT_CHOICES = (
+        (CROPVERT_TOP, 'top'),
+        (CROPVERT_CENTER, 'center'),
+        (CROPVERT_BOTTOM, 'bottom'),
+    )
 
-    def save(self, *args, **kwargs):
-        if self.is_main:
-            related_images = self.__class__.objects.filter(
-                                                content_type=self.content_type,
-                                                object_id=self.object_id
-                                            )
-            related_images.update(is_main=False)
+    crop_horz = models.PositiveSmallIntegerField(
+                    verbose_name='crop image horizontally',
+                    choices=CROPHORZ_CHOICES,
+                    blank=True,
+                    default=CROPHORZ_CENTER,
+                    help_text="From where to horizontally crop the image, if cropping is necessary.")
 
-        if not self.pk: # object is created
-            if not self.order: # order is not set
-                self.order = self._get_next_pk() # let it be max(pk)+1
-
-        super(RelatedImageBase, self).save(*args, **kwargs)
+    crop_vert = models.PositiveSmallIntegerField(
+                    verbose_name='crop image vertically',
+                    choices=CROPVERT_CHOICES,
+                    blank=True,
+                    default=CROPVERT_CENTER,
+                    help_text="From were to vertically crop the image, if cropping is necessary.")
 
     class Meta:
         abstract=True
 
 
-
-class GenericRelatedImageBase(ImageBase):
+class RelatedImageAutoBase(ImageAutoBase):
     """
-        An image that can be attached to any other content object
+        Abstract Image model that will be automatically
+        resized based on the project image specs. Includes a
+        property to manually define the images related field
+        in a subclass.
 
     """
+    def _get_fk_field(self):
+        """ This looks for a foreign key field on the model. If there is one,
+            it uses this field to order the image collection. There can only be one foreign key
+            field for each image model. If there is more than one, override this field in
+            your sub class to define the proper foreign key explicitly.
+        """
+        opts = self._meta
+        fk_field = [f for f in opts.fields if f.get_internal_type() == "ForeignKey"][0]
+        return fk_field
 
-    content_type = models.ForeignKey(ContentType)
-    object_id = models.PositiveIntegerField()
-    content_object = generic.GenericForeignKey()
+    def _get_fk_field_name(self):
+        field = self._get_fk_field()
+        fk_field_name = field.name
+        return fk_field_name
 
-    # metadata
+    
+    order = PositionField(unique_for_field=_get_fk_field_name)
     is_main = models.BooleanField('Main image', default=False)
-    order = models.IntegerField(default=0)
+
+    class Meta:
+        ordering = ['order',]
 
     def get_upload_path(self, filename):
-        """ Override this in proxy subclass to customize upload path..
-        """
-        related_object = str(self.content_object) if self.content_object else 'common'
-
-        root, ext = os.path.splitext(filename)
-        return os.path.join('images', related_object,
-                            self.filename + ext)
-
-    def next(self):
-        """ Returns next image for same content_object and None if image is
-        the last. """
-        try:
-            return self.__class__.objects.for_model(self.content_object,
-                                                    self.content_type).\
-                            filter(order__lt=self.order).order_by('-order')[0]
-        except IndexError:
-            return None
-
-    def previous(self):
-        """ Returns previous image for same content_object and None if image
-        is the first. """
-        try:
-            return self.__class__.objects.for_model(self.content_object,
-                                                    self.content_type).\
-                            filter(order__gt=self.order).order_by('order')[0]
-        except IndexError:
-            return None
-
-    def get_order_in_album(self, reversed_ordering=True):
-        """ Returns image order number. It is calculated as (number+1) of images
-        attached to the same content_object whose order is greater
-        (if 'reverse_ordering' is True) or lesser (if 'reverse_ordering' is
-        False) than image's order.
-        """
-        lookup = 'order__gt' if reversed_ordering else 'order__lt'
-        return self.__class__.objects.\
-                        for_model(self.content_object, self.content_type).\
-                        filter(**{lookup: self.order}).count() + 1
-
-
-    def _get_next_pk(self):
-        max_pk = self.__class__.objects.aggregate(m=Max('pk'))['m'] or 0
-        return max_pk+1
+        return os.path.join('images', self.fk_field.name, filename)
 
     def save(self, *args, **kwargs):
         if self.is_main:
-            related_images = self.__class__.objects.filter(
-                                                content_type=self.content_type,
-                                                object_id=self.object_id
-                                            )
+            related_images = self._default_manager.filter(
+                _self.get_fk_field_name = self._get_fk_field)
             related_images.update(is_main=False)
 
-        if not self.pk: # object is created
-            if not self.order: # order is not set
-                self.order = self._get_next_pk() # let it be max(pk)+1
+        super(RelatedImageAutoSizeBase, self).save(*args, **kwargs)
 
-        super(GenericRelatedImageBase, self).save(*args, **kwargs)
+    class Meta:
+        abstract=True
+
+
+class GenericRelatedImageAutoSizeBase(RelatedImageAutoSizeBase):
+    """
+        Abstract Image model that will be automatically
+        resized based on the project image specs. Includes a
+        property to manually define the images related field
+        in a subclass.
+
+    """
+
+    def get_upload_path(self, filename):
+        return os.path.join('images', self.related_field, filename)
+
+    def save(self, *args, **kwargs):
+        if self.is_main:
+            related_images = self._default_manager.filter(
+                project=self.related_field)
+            related_images.update(is_main=False)
+
+        super(ProjectImage, self).save(*args, **kwargs)
 
     class Meta:
         abstract=True
