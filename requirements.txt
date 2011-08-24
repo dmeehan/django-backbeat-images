@@ -7,3 +7,6 @@
 
 # python modules
 PIL
+
+# django apps
+django-imagekit
