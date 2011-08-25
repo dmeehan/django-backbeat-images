@@ -19,7 +19,7 @@ from media.fields import PositionField
 
 class ImageFieldMixin(models.Model):
     """
-        Simple abstract Model class with image field.
+        Simple abstract Model class mixin that supplies an image field.
 
     """
 
@@ -37,8 +37,9 @@ class ImageFieldMixin(models.Model):
 
 class ImageFieldAutoMixin(ImageModel, ImageFieldMixin):
     """
-        Simple abstract Model class with image field that includes
-        resize specs.
+        Simple abstract Model class mixin that supplies an image field and includes
+        specs for image resizing and processing via Imagekit. Imagekit options must be
+        defined in the projects settings file.
 
     """
     class Meta:
@@ -48,8 +49,7 @@ class ImageFieldAutoMixin(ImageModel, ImageFieldMixin):
         spec_module = settings.MEDIA_SPEC_MODULE
         cache_dir = settings.MEDIA_CACHE_DIR
         cache_filename_format = settings.MEDIA_CACHE_FILENAME_FORMAT
-        preprocessor_spec = settings.MEDIA_CACHE_FILENAME_FORMAT
-        storage = settings.MEDIA_STORAGE
+        preprocessor_spec = settings.MEDIA_PREPROCESSOR_SPEC
 
 class ReplaceOldImageMixin(models.Model):
     """
@@ -96,10 +96,10 @@ class ImageBase(models.Model):
         return u'%s' % self.name
 
 
-class ImageAutoBase(ImageModel, ImageFieldAutoMixin, ImageBase):
+class ImageAutoBase(ImageFieldAutoMixin, ImageBase):
     """
         Abstract Image model that will be automatically
-        resized based on the project image specs.
+        re-sized and processed based on the project image specs.
 
     """
     CROPHORZ_LEFT = 0
@@ -140,28 +140,29 @@ class ImageAutoBase(ImageModel, ImageFieldAutoMixin, ImageBase):
 
 class RelatedImageAutoBase(ImageAutoBase):
     """
-        Abstract Image model that will be automatically
-        resized based on the project image specs. Includes a
-        property to manually define the images related field
-        in a subclass.
+        An subclass of ImageAutoBase that adds fields and
+        methods to define an image collection attached to a
+        related model. To use in a project, subclass this model
+        and add a foreign key field to the related model you wish to
+        have an image collection.
 
     """
-    def _get_fk_field(self):
+    def _get_fk_field_name(self):
         """ This looks for a foreign key field on the model. If there is one,
             it uses this field to order the image collection. There can only be one foreign key
-            field for each image model. If there is more than one, override this field in
+            field for each image model. If there is more than one, you must override this method in
             your sub class to define the proper foreign key explicitly.
+            i.e. fk_field_name = <your selected foreign key field name>
         """
         opts = self._meta
-        fk_field = [f for f in opts.fields if f.get_internal_type() == "ForeignKey"][0]
-        return fk_field
+        fk_field_list = [f for f in opts.fields if f.get_internal_type() == "ForeignKey"]
+        try:
+            if len(fk_field_list) == 1:
+                fk_field_name = [f.name for f in fk_field_list][0]
+                return fk_field_name
+        except:
+            raise NotImplementedError
 
-    def _get_fk_field_name(self):
-        field = self._get_fk_field()
-        fk_field_name = field.name
-        return fk_field_name
-
-    
     order = PositionField(unique_for_field=_get_fk_field_name)
     is_main = models.BooleanField('Main image', default=False)
 
@@ -169,39 +170,16 @@ class RelatedImageAutoBase(ImageAutoBase):
         ordering = ['order',]
 
     def get_upload_path(self, filename):
-        return os.path.join('images', self.fk_field.name, filename)
+        related_model = self._get_fk_field_name()
+        return os.path.join('images', related_model, filename)
 
     def save(self, *args, **kwargs):
         if self.is_main:
-            related_images = self._default_manager.filter(
-                _self.get_fk_field_name = self._get_fk_field)
+            kwargs = {self._get_fk_field_name(): getattr(self, self._get_fk_field_name())}
+            related_images = self._default_manager.filter(**kwargs)
             related_images.update(is_main=False)
 
-        super(RelatedImageAutoSizeBase, self).save(*args, **kwargs)
-
-    class Meta:
-        abstract=True
-
-
-class GenericRelatedImageAutoSizeBase(RelatedImageAutoSizeBase):
-    """
-        Abstract Image model that will be automatically
-        resized based on the project image specs. Includes a
-        property to manually define the images related field
-        in a subclass.
-
-    """
-
-    def get_upload_path(self, filename):
-        return os.path.join('images', self.related_field, filename)
-
-    def save(self, *args, **kwargs):
-        if self.is_main:
-            related_images = self._default_manager.filter(
-                project=self.related_field)
-            related_images.update(is_main=False)
-
-        super(ProjectImage, self).save(*args, **kwargs)
+        super(RelatedImageAutoBase, self).save(*args, **kwargs)
 
     class Meta:
         abstract=True
