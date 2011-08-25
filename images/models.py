@@ -171,6 +171,7 @@ class RelatedImageAutoBase(ImageAutoBase):
     is_main = models.BooleanField('Main image', default=False)
 
     class Meta:
+        abstract=True
         ordering = ['order']
 
     def get_upload_path(self, filename):
@@ -185,6 +186,3 @@ class RelatedImageAutoBase(ImageAutoBase):
             kwargs = {}
 
         super(RelatedImageAutoBase, self).save(*args, **kwargs)
-
-    class Meta:
-        abstract=True
