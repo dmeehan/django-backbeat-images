@@ -188,7 +188,8 @@ the case of a new instance).
         # or all instances with the same value in unique_for_field
         filters = {}
         if self.unique_for_field:
-            unique_for_field = instance._meta.get_field(self.generate_unique_field)
+            field_name = self.generate_unique_field
+            unique_for_field = instance._meta.get_field(field_name)
             unique_for_value = getattr(instance, unique_for_field.attname)
             if unique_for_field.null and unique_for_value is None:
                 filters['%s__isnull' % unique_for_field.name] = True
@@ -254,7 +255,8 @@ the case of a new instance).
             'table': qn(instance._meta.db_table),
         }
         if self.unique_for_field:
-            unique_for_field = instance._meta.get_field(self.generate_unique_field)
+            field_name = self.generate_unique_field
+            unique_for_field = instance._meta.get_field(field_name)
             unique_for_value = getattr(instance, unique_for_field.attname)
 
             params['unique_for_field'] = qn(unique_for_field.column)
