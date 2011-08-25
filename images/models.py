@@ -166,8 +166,6 @@ class RelatedImageAutoBase(ImageAutoBase):
         except:
             raise NotImplementedError
 
-    FK_FIELD_NAME = _get_fk_field_name(RelatedImageAutoBase)
-
     order = PositionField(unique_for_field=_get_fk_field_name)
     is_main = models.BooleanField('Main image', default=False)
 
