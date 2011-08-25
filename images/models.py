@@ -13,7 +13,7 @@
 from django.conf import settings
 from django.db import models, transaction
 
-from imagekit import ImageModel
+from imagekit.models import ImageModel
 
 from images.fields import PositionField
 
