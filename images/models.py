@@ -171,7 +171,7 @@ class RelatedImageAutoBase(ImageAutoBase):
     is_main = models.BooleanField('Main image', default=False)
 
     class Meta:
-        ordering = ['order',]
+        ordering = ['order']
 
     def get_upload_path(self, filename):
         related_model = self._get_fk_field_name()
@@ -182,6 +182,7 @@ class RelatedImageAutoBase(ImageAutoBase):
             kwargs = {self._get_fk_field_name(): getattr(self, self._get_fk_field_name())}
             related_images = self._default_manager.filter(**kwargs)
             related_images.update(is_main=False)
+            kwargs = {}
 
         super(RelatedImageAutoBase, self).save(*args, **kwargs)
 
