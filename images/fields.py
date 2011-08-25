@@ -51,7 +51,7 @@ the case of a new instance).
             )
         # TODO: raise exception if position field appears in unique_together
 
-        self.unique_for_field = unique_for_field
+        #self.unique_for_field = unique_for_field
         if callable(unique_for_field):
             self.generate_unique_field = unique_for_field
 
