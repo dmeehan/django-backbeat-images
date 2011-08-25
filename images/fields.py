@@ -51,12 +51,12 @@ the case of a new instance).
             )
         # TODO: raise exception if position field appears in unique_together
 
-        #self.unique_for_field = unique_for_field
         if callable(unique_for_field):
             self.generate_unique_field = unique_for_field
 
 
         super(PositionField, self).__init__(verbose_name, name, *args, **kwargs)
+        self.unique_for_field = unique_for_field
 
 
 
@@ -70,8 +70,8 @@ the case of a new instance).
         post_delete.connect(self._on_delete, sender=cls)
         post_save.connect(self._on_save, sender=cls)
 
-    def generate_unique_field(self):
-        return self.unique_for_field
+    def generate_unique_field(self, instance):
+        return instance.unique_for_field
 
     def get_internal_type(self):
         # all values will be positive after pre_save
@@ -151,11 +151,6 @@ the case of a new instance).
         # initialized to None when models.Manager.create is called with an
         # explicit position.
 
-        # FIXME: This breaks pre-newforms-admin when setting a position gt the
-        # maximum possible position -- something about how models are
-        # instantiated keeps this method from doing the right thing.
-        # Fortunately it works on newforms-admin, so it will be moot soon.
-
         has_pk = bool(getattr(instance, instance._meta.pk.attname))
 
         # default to None for existing instances; -1 for new instances
@@ -188,7 +183,7 @@ the case of a new instance).
         # or all instances with the same value in unique_for_field
         filters = {}
         if self.unique_for_field:
-            field_name = self.generate_unique_field
+            field_name = self.generate_unique_field(instance)
             unique_for_field = instance._meta.get_field(field_name)
             unique_for_value = getattr(instance, unique_for_field.attname)
             if unique_for_field.null and unique_for_value is None:
@@ -255,7 +250,7 @@ the case of a new instance).
             'table': qn(instance._meta.db_table),
         }
         if self.unique_for_field:
-            field_name = self.generate_unique_field
+            field_name = self.generate_unique_field(instance)
             unique_for_field = instance._meta.get_field(field_name)
             unique_for_value = getattr(instance, unique_for_field.attname)
 
