@@ -42,11 +42,12 @@ class ImageFieldAutoMixin(ImageModel, ImageFieldMixin):
         defined in the projects settings file.
 
     """
+    
     class Meta:
         abstract = True
 
     class IKOptions:
-        spec_module = settings.MEDIA_SPEC_MODULE
+        spec_module = settings.MEDIA_SPEC_FILE
         cache_dir = settings.MEDIA_CACHE_DIR
         cache_filename_format = settings.MEDIA_CACHE_FILENAME_FORMAT
         preprocessor_spec = settings.MEDIA_PREPROCESSOR_SPEC
