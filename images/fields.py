@@ -2,7 +2,7 @@
 
 from django.db import connection, models
 from django.db.models.signals import post_delete, post_save
-
+from django.utils.encoding import force_unicode, smart_str
 
 """
 
@@ -52,7 +52,12 @@ the case of a new instance).
         # TODO: raise exception if position field appears in unique_together
 
         super(PositionField, self).__init__(verbose_name, name, *args, **kwargs)
+
+
         self.unique_for_field = unique_for_field
+        if callable(unique_for_field):
+            self.generate_unique_field = unique_for_field
+
 
     def contribute_to_class(self, cls, name):
         super(PositionField, self).contribute_to_class(cls, name)
@@ -63,6 +68,9 @@ the case of a new instance).
         # adjust related positions in response to a delete or save
         post_delete.connect(self._on_delete, sender=cls)
         post_save.connect(self._on_save, sender=cls)
+
+    def generate_unique_field(self):
+        return smart_str(self.unique_for_field)
 
     def get_internal_type(self):
         # all values will be positive after pre_save
