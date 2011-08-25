@@ -51,12 +51,12 @@ the case of a new instance).
             )
         # TODO: raise exception if position field appears in unique_together
 
-        super(PositionField, self).__init__(verbose_name, name, *args, **kwargs)
-
-
         self.unique_for_field = unique_for_field
         if callable(unique_for_field):
             self.generate_unique_field = unique_for_field
+
+        super(PositionField, self).__init__(verbose_name, name, *args, **kwargs)
+
 
 
     def contribute_to_class(self, cls, name):
@@ -69,7 +69,7 @@ the case of a new instance).
         post_delete.connect(self._on_delete, sender=cls)
         post_save.connect(self._on_save, sender=cls)
 
-    def generate_unique_field(self):
+    def generate_unique_field(self, instance):
         return smart_str(self.unique_for_field)
 
     def get_internal_type(self):
