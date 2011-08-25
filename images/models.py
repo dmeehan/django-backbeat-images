@@ -166,7 +166,9 @@ class RelatedImageAutoBase(ImageAutoBase):
         except:
             raise NotImplementedError
 
-    order = PositionField(unique_for_field=_get_fk_field_name)
+    FK_FIELD_NAME = _get_fk_field_name()
+
+    order = PositionField(unique_for_field=_get_fk_field_name())
     is_main = models.BooleanField('Main image', default=False)
 
     class Meta:
