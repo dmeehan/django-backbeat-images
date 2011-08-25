@@ -1,4 +1,4 @@
-# media/__init__.py
+# images/__init__.py
 
 __version_info__ = {
     'major': 0,

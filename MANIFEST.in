@@ -3,4 +3,4 @@ include README.txt
 include CREDITS.txt
 include LICENSE.txt
 
-recursive-include media *.html *.txt *.json *.html
+recursive-include images *.html *.txt *.json *.html

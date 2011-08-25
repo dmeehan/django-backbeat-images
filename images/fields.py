@@ -1,4 +1,4 @@
-# media/fields.py
+# images/fields.py
 
 from django.db import connection, models
 from django.db.models.signals import post_delete, post_save

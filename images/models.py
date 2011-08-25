@@ -1,8 +1,8 @@
 # coding: utf-8
-# media/models.py
+# images/models.py
 """
 
-    A pluggable media management app for django.
+    A pluggable image management app for django.
     Requires django-imagekit and PIL.
 
     Borrows from django-generic-images:
@@ -15,7 +15,7 @@ from django.db import models, transaction
 
 from imagekit import ImageModel
 
-from media.fields import PositionField
+from images.fields import PositionField
 
 class ImageFieldMixin(models.Model):
     """
@@ -47,10 +47,10 @@ class ImageFieldAutoMixin(ImageModel, ImageFieldMixin):
         abstract = True
 
     class IKOptions:
-        spec_module = settings.MEDIA_SPEC_FILE
-        cache_dir = settings.MEDIA_CACHE_DIR
-        cache_filename_format = settings.MEDIA_CACHE_FILENAME_FORMAT
-        preprocessor_spec = settings.MEDIA_PREPROCESSOR_SPEC
+        spec_module = settings.IMAGES_SPEC_FILE
+        cache_dir = settings.IMAGES_CACHE_DIR
+        cache_filename_format = settings.IMAGES_CACHE_FILENAME_FORMAT
+        preprocessor_spec = settings.IMAGES_PREPROCESSOR_SPEC
 
 class ReplaceOldImageMixin(models.Model):
     """

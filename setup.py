@@ -1,5 +1,5 @@
 from setuptools import setup, find_packages
-import media
+import images
 import os
 
 try:
@@ -13,9 +13,9 @@ except (IOError, OSError):
     reqs = ''
 
 setup(
-    name='django-backbeat-media',
-    version=media.get_version(),
-    description='A pluggable media management app.',
+    name='django-backbeat-images',
+    version=images.get_version(),
+    description='A pluggable image management app.',
     long_description=long_description,
     author='Douglas Meehan',
     author_email='dmeehan@gmail.com',
