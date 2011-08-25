@@ -9,4 +9,4 @@
 PIL
 
 # django apps
-django-imagekit
+django-imagekit==0.3.6
