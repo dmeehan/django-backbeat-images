@@ -10,6 +10,8 @@
     by https://bitbucket.org/kmike/
 
 """
+import os
+
 from django.conf import settings
 from django.db import models, transaction
 
