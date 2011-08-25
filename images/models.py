@@ -150,6 +150,7 @@ class RelatedImageAutoBase(ImageAutoBase):
         have an image collection.
 
     """
+    
     def _get_fk_field_name(self):
         """ This looks for a foreign key field on the model. If there is one,
             it uses this field to order the image collection. There can only be one foreign key
