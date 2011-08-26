@@ -44,6 +44,37 @@ class ImageFieldAutoMixin(ImageModel, ImageFieldMixin):
         defined in the projects settings file.
 
     """
+    CROPHORZ_LEFT = 0
+    CROPHORZ_CENTER = 1
+    CROPHORZ_RIGHT = 2
+    CROPHORZ_CHOICES = (
+        (CROPHORZ_LEFT, 'left'),
+        (CROPHORZ_CENTER, 'center'),
+        (CROPHORZ_RIGHT, 'right'),
+    )
+
+    CROPVERT_TOP = 0
+    CROPVERT_CENTER = 1
+    CROPVERT_BOTTOM = 2
+    CROPVERT_CHOICES = (
+        (CROPVERT_TOP, 'top'),
+        (CROPVERT_CENTER, 'center'),
+        (CROPVERT_BOTTOM, 'bottom'),
+    )
+
+    crop_horz = models.PositiveSmallIntegerField(
+                    verbose_name='crop image horizontally',
+                    choices=CROPHORZ_CHOICES,
+                    blank=True,
+                    default=CROPHORZ_CENTER,
+                    help_text="From where to horizontally crop the image, if cropping is necessary.")
+
+    crop_vert = models.PositiveSmallIntegerField(
+                    verbose_name='crop image vertically',
+                    choices=CROPVERT_CHOICES,
+                    blank=True,
+                    default=CROPVERT_CENTER,
+                    help_text="From were to vertically crop the image, if cropping is necessary.")
     
     class Meta:
         abstract = True
@@ -105,37 +136,6 @@ class ImageAutoBase(ImageFieldAutoMixin, ImageBase):
         re-sized and processed based on the project image specs.
 
     """
-    CROPHORZ_LEFT = 0
-    CROPHORZ_CENTER = 1
-    CROPHORZ_RIGHT = 2
-    CROPHORZ_CHOICES = (
-        (CROPHORZ_LEFT, 'left'),
-        (CROPHORZ_CENTER, 'center'),
-        (CROPHORZ_RIGHT, 'right'),
-    )
-
-    CROPVERT_TOP = 0
-    CROPVERT_CENTER = 1
-    CROPVERT_BOTTOM = 2
-    CROPVERT_CHOICES = (
-        (CROPVERT_TOP, 'top'),
-        (CROPVERT_CENTER, 'center'),
-        (CROPVERT_BOTTOM, 'bottom'),
-    )
-
-    crop_horz = models.PositiveSmallIntegerField(
-                    verbose_name='crop image horizontally',
-                    choices=CROPHORZ_CHOICES,
-                    blank=True,
-                    default=CROPHORZ_CENTER,
-                    help_text="From where to horizontally crop the image, if cropping is necessary.")
-
-    crop_vert = models.PositiveSmallIntegerField(
-                    verbose_name='crop image vertically',
-                    choices=CROPVERT_CHOICES,
-                    blank=True,
-                    default=CROPVERT_CENTER,
-                    help_text="From were to vertically crop the image, if cropping is necessary.")
 
     class Meta:
         abstract=True
