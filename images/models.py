@@ -32,7 +32,7 @@ class ImageFieldMixin(models.Model):
     def _upload_path_wrapper(self, filename):
         return self.get_upload_path(filename)
 
-    image = models.ImageField(upload_to=_upload_path_wrapper)
+    image = models.ImageField(upload_to=_upload_path_wrapper, blank=True, null=True)
 
     class Meta:
         abstract = True
