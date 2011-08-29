@@ -116,12 +116,9 @@ class ImageBase(models.Model):
     """
 
     # core fields
-    name = models.CharField(max_length=255)
+    name = models.CharField(max_length=255, blank=True)
     caption = models.TextField(null=True, blank=True)
     public = models.BooleanField(default=True, help_text="This file is publicly available.")
-
-    slug = models.SlugField(unique=True,
-                            help_text="Suggested value automatically generated from name. Must be unique.")
 
     class Meta:
         abstract=True
