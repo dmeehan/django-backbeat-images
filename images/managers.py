@@ -9,9 +9,9 @@ class ImageMixin(object):
     def public(self):
         return self.get_query_set().filter(public=True)
 
-class ImageQuerySet(QuerySet, ProjectMixin):
+class ImageQuerySet(QuerySet, ImageMixin):
     pass
 
-class ImageManager(models.Manager, ProjectMixin):
+class ImageManager(models.Manager, ImageMixin):
     def get_query_set(self):
-        return ProjectQuerySet(self.model, using=self._db)
+        return ImageQuerySet(self.model, using=self._db)
