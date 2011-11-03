@@ -26,8 +26,7 @@ class ImageFieldMixin(models.Model):
     """
 
     def get_upload_path(self, filename):
-        """ Override this to customize upload path """
-        raise NotImplementedError
+        return 'images'
 
     def _upload_path_wrapper(self, filename):
         return self.get_upload_path(filename)
