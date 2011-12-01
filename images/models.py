@@ -26,7 +26,8 @@ class ImageFieldMixin(models.Model):
     """
 
     def get_upload_path(self, filename):
-        return 'images'
+        model = self.__class__.__name__
+        return os.path.join('images', model, filename)
 
     def _upload_path_wrapper(self, filename):
         return self.get_upload_path(filename)
