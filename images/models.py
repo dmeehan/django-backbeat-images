@@ -91,9 +91,6 @@ class RelatedImageMixin(models.Model):
         related_model = self._get_fk_field_name()
         return os.path.join('images', related_model, filename)
 
-    def get_main_image(self):
-        pass
-
     def save(self, *args, **kwargs):
         if self.is_main:
             kwargs = {self._get_fk_field_name(): getattr(self, self._get_fk_field_name())}
