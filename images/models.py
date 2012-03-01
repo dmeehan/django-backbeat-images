@@ -3,7 +3,7 @@
 """
 
     A pluggable image management app for django.
-    Requires django-imagekit and PIL.
+    Requires PIL.
 
     Borrows from django-generic-images:
     https://bitbucket.org/kmike/django-generic-images/
@@ -15,74 +15,7 @@ import os
 from django.conf import settings
 from django.db import models, transaction
 
-from imagekit.models import ImageModel
-
 from images.fields import PositionField
-
-class ImageFieldMixin(models.Model):
-    """
-        Simple abstract Model class mixin that supplies an image field.
-
-    """
-
-    def get_upload_path(self, filename):
-        return 'images'
-
-    def _upload_path_wrapper(self, filename):
-        return self.get_upload_path(filename)
-
-    image = models.ImageField(upload_to=_upload_path_wrapper, blank=True, null=True)
-
-    class Meta:
-        abstract = True
-
-class ImageFieldAutoMixin(ImageModel, ImageFieldMixin):
-    """
-        Simple abstract Model class mixin that supplies an image field and includes
-        specs for image resizing and processing via Imagekit. Imagekit options must be
-        defined in the projects settings file.
-
-    """
-    CROPHORZ_LEFT = 0
-    CROPHORZ_CENTER = 1
-    CROPHORZ_RIGHT = 2
-    CROPHORZ_CHOICES = (
-        (CROPHORZ_LEFT, 'left'),
-        (CROPHORZ_CENTER, 'center'),
-        (CROPHORZ_RIGHT, 'right'),
-    )
-
-    CROPVERT_TOP = 0
-    CROPVERT_CENTER = 1
-    CROPVERT_BOTTOM = 2
-    CROPVERT_CHOICES = (
-        (CROPVERT_TOP, 'top'),
-        (CROPVERT_CENTER, 'center'),
-        (CROPVERT_BOTTOM, 'bottom'),
-    )
-
-    crop_horz = models.PositiveSmallIntegerField(
-                    verbose_name='crop image horizontally',
-                    choices=CROPHORZ_CHOICES,
-                    blank=True,
-                    default=CROPHORZ_CENTER,
-                    help_text="From where to horizontally crop the image, if cropping is necessary.")
-
-    crop_vert = models.PositiveSmallIntegerField(
-                    verbose_name='crop image vertically',
-                    choices=CROPVERT_CHOICES,
-                    blank=True,
-                    default=CROPVERT_CENTER,
-                    help_text="From were to vertically crop the image, if cropping is necessary.")
-    
-    class Meta:
-        abstract = True
-
-    class IKOptions:
-        spec_module = settings.IMAGES_SPEC_FILE
-        cache_dir = settings.IMAGES_CACHE_DIR
-        cache_filename_format = settings.IMAGES_CACHE_FILENAME_FORMAT
-        preprocessor_spec = settings.IMAGES_PREPROCESSOR_SPEC
 
 class ReplaceOldImageMixin(models.Model):
     """
@@ -126,25 +59,9 @@ class ImageBase(models.Model):
         return u'%s' % self.name
 
 
-class ImageAutoBase(ImageFieldAutoMixin, ImageBase):
+class RelatedImageMixin(models.Model):
     """
-        Abstract Image model that will be automatically
-        re-sized and processed based on the project image specs.
-
-    """
-
-    class Meta:
-        abstract=True
-
-
-class RelatedImageAutoBase(ImageAutoBase):
-    """
-        An subclass of ImageAutoBase that adds fields and
-        methods to define an image collection attached to a
-        related model. To use in a project, subclass this model
-        and add a foreign key field to the related model you wish to
-        have an image collection.
-
+        Fields and behavior for an image collection
     """
     
     def _get_fk_field_name(self):
@@ -174,6 +91,9 @@ class RelatedImageAutoBase(ImageAutoBase):
         related_model = self._get_fk_field_name()
         return os.path.join('images', related_model, filename)
 
+    def get_main_image(self):
+        pass
+
     def save(self, *args, **kwargs):
         if self.is_main:
             kwargs = {self._get_fk_field_name(): getattr(self, self._get_fk_field_name())}
@@ -181,4 +101,15 @@ class RelatedImageAutoBase(ImageAutoBase):
             related_images.update(is_main=False)
             kwargs = {}
 
-        super(RelatedImageAutoBase, self).save(*args, **kwargs)
+        super(RelatedImageBase, self).save(*args, **kwargs)
+
+class RelatedImageBase(ImageBase, RelatedImageMixin):
+    """
+        A subclass of ImageBase that adds fields and
+        methods to define an image collection attached to a
+        related model. To use in a project, subclass this model
+        and add a foreign key field to the related model you wish to
+        have an image collection.
+    """
+    class Meta:
+        abstract=True
